@@ -6,7 +6,7 @@ WG_INTERFACE="wg0"
 WG_SERVER_IP="10.66.66.1/24"
 DOMAIN_NAME="finapi.amirnick.at"
 
-# به‌روزرسانی و نصب پیش‌نیازها
+# نصب پیش‌نیازها
 apt update && apt install -y wireguard qrencode curl
 
 # تولید کلیدهای سرور
@@ -20,7 +20,7 @@ CLIENTS=(
   "Mohsenguard:10.66.66.3/32"
 )
 
-# پیکربندی WireGuard (سرور)
+# پیکربندی سرور WireGuard
 cat > /etc/wireguard/${WG_INTERFACE}.conf <<EOF
 [Interface]
 PrivateKey = ${SERVER_PRIVATE}
@@ -30,7 +30,7 @@ PostUp = iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 PostDown = iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 EOF
 
-# ایجاد پیکربندی و کلید کلاینت‌ها
+# ایجاد و افزودن کلاینت‌ها
 for entry in "${CLIENTS[@]}"; do
   NAME=${entry%%:*}
   IP=${entry##*:}
@@ -38,7 +38,7 @@ for entry in "${CLIENTS[@]}"; do
   PRIV_KEY=$(cat ${NAME}_private.key)
   PUB_KEY=$(cat ${NAME}_public.key)
 
-  # افزودن به پیکربندی سرور
+  # افزودن Peer به سرور
   cat >> /etc/wireguard/${WG_INTERFACE}.conf <<EOF
 
 [Peer]
@@ -46,7 +46,7 @@ PublicKey = ${PUB_KEY}
 AllowedIPs = ${IP}
 EOF
 
-  # ساخت فایل کانفیگ کلاینت
+  # ساخت کانفیگ کلاینت
   cat > /root/${NAME}.conf <<EOF
 [Interface]
 PrivateKey = ${PRIV_KEY}
@@ -62,7 +62,7 @@ EOF
 
 done
 
-# فعال‌سازی IP forwarding
+# فعال‌سازی IP Forwarding
 echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 sysctl -p
 
@@ -79,5 +79,4 @@ cd AdGuardHome
 # راه‌اندازی مجدد AdGuard Home
 systemctl restart AdGuardHome
 
-# پایان اسکریپت
 echo "[✓] نصب کامل شد. فایل‌های کانفیگ کلاینت در /root قرار دارند."
